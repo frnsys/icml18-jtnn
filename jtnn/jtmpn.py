@@ -43,7 +43,7 @@ class JTMPN(nn.Module):
         total_atoms = 0
         scope = []
 
-        for e,vec in tree_mess.iteritems():
+        for e,vec in tree_mess.items():
             mess_dict[e] = len(all_mess)
             all_mess.append(vec)
 
