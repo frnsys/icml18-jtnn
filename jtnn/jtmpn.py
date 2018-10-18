@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from nnutils import create_var, index_select_ND
+from .nnutils import create_var, index_select_ND
 #from mpn import atom_features, bond_features, ATOM_FDIM, BOND_FDIM
 import rdkit.Chem as Chem
 

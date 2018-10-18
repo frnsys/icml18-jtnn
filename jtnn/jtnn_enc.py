@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from collections import deque
-from nnutils import create_var, GRU
+from .nnutils import create_var, GRU
 
 MAX_NB = 8
 

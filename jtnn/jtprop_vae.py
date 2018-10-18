@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
-from mol_tree import MolTree
-from nnutils import create_var
-from jtnn_enc import JTNNEncoder
-from jtnn_dec import JTNNDecoder
-from mpn import MPN, mol2graph
-from jtmpn import JTMPN
+from .mol_tree import MolTree
+from .nnutils import create_var
+from .jtnn_enc import JTNNEncoder
+from .jtnn_dec import JTNNDecoder
+from .mpn import MPN, mol2graph
+from .jtmpn import JTMPN
 
-from chemutils import enum_assemble, set_atommap, copy_edit_mol, attach_mols, decode_stereo
+from .chemutils import enum_assemble, set_atommap, copy_edit_mol, attach_mols, decode_stereo
 import rdkit.Chem as Chem
 from rdkit import DataStructs
 from rdkit.Chem import AllChem
