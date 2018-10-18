@@ -1,19 +1,15 @@
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
 
-import math, random, sys
 from optparse import OptionParser
-from collections import deque
 
 import rdkit
 import rdkit.Chem as Chem
 from rdkit.Chem import Descriptors
 import sascorer
 
-from jtnn import *
+from jtnn import Vocab, JTPropVAE
 
-lg = rdkit.RDLogger.logger() 
+lg = rdkit.RDLogger.logger()
 lg.setLevel(rdkit.RDLogger.CRITICAL)
 
 parser = OptionParser()
@@ -25,8 +21,8 @@ parser.add_option("-l", "--latent", dest="latent_size", default=56)
 parser.add_option("-d", "--depth", dest="depth", default=3)
 parser.add_option("-s", "--sim", dest="cutoff", default=0.0)
 opts,args = parser.parse_args()
-   
-vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)] 
+
+vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)]
 vocab = Vocab(vocab)
 
 hidden_size = int(opts.hidden_size)
@@ -54,6 +50,6 @@ for smiles in data:
     new_score = Descriptors.MolLogP(new_mol) - sascorer.calculateScore(new_mol)
 
     res.append( (new_score - score, sim, score, new_score, smiles, new_smiles) )
-    print new_score - score, sim, score, new_score, smiles, new_smiles
+    print(new_score - score, sim, score, new_score, smiles, new_smiles)
 
-print sum([x[0] for x in res]), sum([x[1] for x in res])
+print(sum([x[0] for x in res]), sum([x[1] for x in res]))

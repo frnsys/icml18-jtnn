@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
-from mol_tree import Vocab, MolTree, MolTreeNode
+from mol_tree import MolTreeNode
 from nnutils import create_var, GRU
 from chemutils import enum_assemble
-import copy
 
 MAX_NB = 8
 MAX_DECODE_LEN = 100
@@ -45,7 +44,7 @@ class JTNNDecoder(nn.Module):
         trace = []
         dfs(trace, node, super_root)
         return [(x.smiles, y.smiles, z) for x,y,z in trace]
-       
+
     def forward(self, mol_batch, mol_vec):
         super_root = MolTreeNode("")
         super_root.idx = -1
@@ -64,13 +63,13 @@ class JTNNDecoder(nn.Module):
         #Predict Root
         pred_hiddens.append(create_var(torch.zeros(len(mol_batch),self.hidden_size)))
         pred_targets.extend([mol_tree.nodes[0].wid for mol_tree in mol_batch])
-        pred_mol_vecs.append(mol_vec) 
+        pred_mol_vecs.append(mol_vec)
 
         max_iter = max([len(tr) for tr in traces])
         padding = create_var(torch.zeros(self.hidden_size), False)
         h = {}
 
-        for t in xrange(max_iter):
+        for t in range(max_iter):
             prop_list = []
             batch_list = []
             for i,plist in enumerate(traces):
@@ -119,7 +118,7 @@ class JTNNDecoder(nn.Module):
                 node_y.neighbors.append(node_x)
                 if direction == 1:
                     pred_target.append(node_y.wid)
-                    pred_list.append(i) 
+                    pred_list.append(i)
                 stop_target.append(direction)
 
             #Hidden states for stop prediction
@@ -128,7 +127,7 @@ class JTNNDecoder(nn.Module):
             stop_hidden = torch.cat([cur_x,cur_o,cur_mol_vec], dim=1)
             stop_hiddens.append( stop_hidden )
             stop_targets.extend( stop_target )
-            
+
             #Hidden states for clique prediction
             if len(pred_list) > 0:
                 batch_list = [batch_list[i] for i in pred_list]
@@ -176,16 +175,16 @@ class JTNNDecoder(nn.Module):
         stop_vecs = nn.ReLU()(self.U(stop_hiddens))
         stop_scores = self.U_s(stop_vecs).squeeze()
         stop_targets = create_var(torch.Tensor(stop_targets))
-        
+
         stop_loss = self.stop_loss(stop_scores, stop_targets) / len(mol_batch)
         stops = torch.ge(stop_scores, 0).float()
         stop_acc = torch.eq(stops, stop_targets).float()
         stop_acc = torch.sum(stop_acc) / stop_targets.nelement()
 
         return pred_loss, stop_loss, pred_acc.data[0], stop_acc.data[0]
-    
+
     def decode(self, mol_vec, prob_decode):
-        stack,trace = [],[]
+        stack = []
         init_hidden = create_var(torch.zeros(1,self.hidden_size))
         zero_pad = create_var(torch.zeros(1,1,self.hidden_size))
 
@@ -203,7 +202,7 @@ class JTNNDecoder(nn.Module):
 
         all_nodes = [root]
         h = {}
-        for step in xrange(MAX_DECODE_LEN):
+        for step in range(MAX_DECODE_LEN):
             node_x,fa_slot = stack[-1]
             cur_h_nei = [ h[(node_y.idx,node_x.idx)] for node_y in node_x.neighbors ]
             if len(cur_h_nei) > 0:
@@ -219,7 +218,7 @@ class JTNNDecoder(nn.Module):
             stop_hidden = torch.cat([cur_x,cur_h,mol_vec], dim=1)
             stop_hidden = nn.ReLU()(self.U(stop_hidden))
             stop_score = nn.Sigmoid()(self.U_s(stop_hidden) * 20).squeeze()
-            
+
             if prob_decode:
                 backtrack = (torch.bernoulli(1.0 - stop_score.data)[0] == 1)
             else:
@@ -257,7 +256,7 @@ class JTNNDecoder(nn.Module):
                     all_nodes.append(node_y)
 
             if backtrack: #Backtrack, use if instead of else
-                if len(stack) == 1: 
+                if len(stack) == 1:
                     break #At root, terminate
 
                 node_fa,_ = stack[-2]
@@ -306,7 +305,7 @@ def have_slots(fa_slots, ch_slots):
         ch_slots.pop(ch_match[0])
 
     return True
-    
+
 def can_assemble(node_x, node_y):
     neis = node_x.neighbors + [node_y]
     for i,nei in enumerate(neis):

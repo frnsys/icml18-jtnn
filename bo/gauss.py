@@ -1,9 +1,7 @@
-
 import theano
 import theano.tensor as T
 
 import numpy as np
-from scipy.spatial.distance import cdist
 
 def casting(x):
     return np.array(x).astype(theano.config.floatX)
@@ -108,7 +106,7 @@ def compute_psi2(lls, lsf, z, input_means, input_vars):
     r2b = T.sum(scaled_z_minus_m**2, 2)[ :, None, : ] + T.sum(scaled_z_minus_m**2, 2)[ :, : , None ] + \
         2 * T.batched_dot(scaled_z_minus_m, np.transpose(scaled_z_minus_m, [ 0, 2, 1 ]))
     term_3 = T.exp(-r2b)
-    
+
     psi2_computed = sf**casting(2.0) * term_1[ :, None, None ] * term_2 * term_3
 
     return T.transpose(psi2_computed, [ 1, 2, 0 ])
@@ -135,7 +133,7 @@ def compute_psi2_numpy(lls, lsf, z, input_means, input_vars):
     r2b = np.sum(scaled_z_minus_m**2, 2)[ :, None, : ] + np.sum(scaled_z_minus_m**2, 2)[ :, : , None ] + \
         2 * np.einsum('ijk,ikl->ijl', scaled_z_minus_m, np.transpose(scaled_z_minus_m, [ 0, 2, 1 ]))
     term_3 = np.exp(-r2b)
-    
+
     psi2_computed = sf**casting(2.0) * term_1[ :, None, None ] * term_2 * term_3
     psi2_computed = np.transpose(psi2_computed, [ 1, 2, 0 ])
 

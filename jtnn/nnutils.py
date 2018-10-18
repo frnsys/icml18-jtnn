@@ -24,7 +24,7 @@ def GRU(x, h_nei, W_z, W_r, U_r, W_h):
     r_1 = W_r(x).view(-1,1,hidden_size)
     r_2 = U_r(h_nei)
     r = nn.Sigmoid()(r_1 + r_2)
-    
+
     gated_h = r * h_nei
     sum_gated_h = gated_h.sum(dim=1)
     h_input = torch.cat([x,sum_gated_h], dim=1)

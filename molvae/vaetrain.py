@@ -3,16 +3,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-from torch.autograd import Variable
 
-import math, random, sys
+import sys
 from optparse import OptionParser
-from collections import deque
 
-from jtnn import *
+from jtnn import Vocab, JTNNVAE, MoleculeDataset
 import rdkit
 
-lg = rdkit.RDLogger.logger() 
+lg = rdkit.RDLogger.logger()
 lg.setLevel(rdkit.RDLogger.CRITICAL)
 
 parser = OptionParser()
@@ -27,8 +25,8 @@ parser.add_option("-d", "--depth", dest="depth", default=3)
 parser.add_option("-z", "--beta", dest="beta", default=1.0)
 parser.add_option("-q", "--lr", dest="lr", default=1e-3)
 opts,args = parser.parse_args()
-   
-vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)] 
+
+vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)]
 vocab = Vocab(vocab)
 
 batch_size = int(opts.batch_size)
@@ -51,7 +49,7 @@ else:
             nn.init.xavier_normal(param)
 
 model = model.cuda()
-print "Model #Params: %dK" % (sum([x.nelement() for x in model.parameters()]) / 1000,)
+print("Model #Params: %dK" % (sum([x.nelement() for x in model.parameters()]) / 1000,))
 
 optimizer = optim.Adam(model.parameters(), lr=lr)
 scheduler = lr_scheduler.ExponentialLR(optimizer, 0.9)
@@ -62,7 +60,7 @@ dataset = MoleculeDataset(opts.train_path)
 MAX_EPOCH = 7
 PRINT_ITER = 20
 
-for epoch in xrange(MAX_EPOCH):
+for epoch in range(MAX_EPOCH):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=lambda x:x, drop_last=True)
 
     word_acc,topo_acc,assm_acc,steo_acc = 0,0,0,0
@@ -90,16 +88,16 @@ for epoch in xrange(MAX_EPOCH):
             assm_acc = assm_acc / PRINT_ITER * 100
             steo_acc = steo_acc / PRINT_ITER * 100
 
-            print "KL: %.1f, Word: %.2f, Topo: %.2f, Assm: %.2f, Steo: %.2f" % (kl_div, word_acc, topo_acc, assm_acc, steo_acc)
+            print("KL: %.1f, Word: %.2f, Topo: %.2f, Assm: %.2f, Steo: %.2f" % (kl_div, word_acc, topo_acc, assm_acc, steo_acc))
             word_acc,topo_acc,assm_acc,steo_acc = 0,0,0,0
             sys.stdout.flush()
 
         if (it + 1) % 1500 == 0: #Fast annealing
             scheduler.step()
-            print "learning rate: %.6f" % scheduler.get_lr()[0]
+            print("learning rate: %.6f" % scheduler.get_lr()[0])
             torch.save(model.state_dict(), opts.save_path + "/model.iter-%d-%d" % (epoch, it + 1))
 
     scheduler.step()
-    print "learning rate: %.6f" % scheduler.get_lr()[0]
+    print("learning rate: %.6f" % scheduler.get_lr()[0])
     torch.save(model.state_dict(), opts.save_path + "/model.iter-" + str(epoch))
 

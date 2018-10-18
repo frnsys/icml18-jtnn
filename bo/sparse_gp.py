@@ -7,7 +7,7 @@ from __future__ import print_function
 import theano
 import theano.tensor as T
 
-from sparse_gp_theano_internal import *
+from sparse_gp_theano_internal import Sparse_GP
 
 import scipy.stats    as sps
 import scipy.optimize as spo
@@ -22,7 +22,7 @@ def global_optimization(grid, lower, upper, function_grid, function_scalar, func
 
     grid_values = function_grid(grid)
     best = grid_values.argmin()
-    
+
     # We solve the optimization problem
 
     X_initial = grid[ best : (best + 1), : ]
@@ -43,7 +43,7 @@ def adam_theano(loss, all_params, learning_rate = 0.001):
     b1 = 0.9
     b2 = 0.999
     e = 1e-8
-    gamma = 1 - 1e-8
+    # gamma = 1 - 1e-8
     updates = []
     all_grads = theano.grad(loss, all_params)
     alpha = learning_rate
@@ -172,7 +172,7 @@ class SparseGP:
             return np.concatenate([ s.flatten() for s in params ])
 
         def objective(params):
-                
+
             params = de_vectorize_params(params)
             self.set_params(params)
             energy_value = energy(input_means, input_vars, training_targets)
@@ -202,7 +202,7 @@ class SparseGP:
         self.original_training_targets.set_value(training_targets[ selected_points, : ])
 
         print('Initializing network')
-	sys.stdout.flush()
+        sys.stdout.flush()
         self.setForTraining()
         self.initialize()
 
@@ -215,7 +215,7 @@ class SparseGP:
         all_params = self.get_params()
 
         print('Compiling adam updates')
-	sys.stdout.flush()
+        sys.stdout.flush()
 
         process_minibatch_adam = theano.function([ X, Z, y ], -e, updates = adam_theano(-e, all_params, learning_rate), \
             givens = { self.input_means: X, self.input_vars: Z, self.original_training_targets: y })
@@ -249,7 +249,7 @@ class SparseGP:
 
             print('Test error: {} Test ll: {}'.format(test_error, test_ll))
             sys.stdout.flush()
-        
+
             pred = np.zeros((0, 1))
             uncert = np.zeros((0, uncert.shape[ 1 ]))
             for i in range(n_batches):
@@ -261,12 +261,12 @@ class SparseGP:
 
             training_error = np.sqrt(np.mean((pred - training_targets)**2))
             training_ll = np.mean(sps.norm.logpdf(pred - training_targets, scale = np.sqrt(uncert)))
-     
+
             print('Train error: {} Train ll: {}'.format(training_error, training_ll))
             sys.stdout.flush()
 
     def get_incumbent(self, grid, lower, upper):
-        
+
         self.sparse_gp.compute_output()
         m, v = self.sparse_gp.getPredictedValues()
 
@@ -321,7 +321,7 @@ class SparseGP:
             print(i, X_numpy)
 
         m, v = self.predict(X_numpy, 0 * X_numpy)
-    
+
         print("Predictive mean at selected points:\n", m)
 
         return X_numpy

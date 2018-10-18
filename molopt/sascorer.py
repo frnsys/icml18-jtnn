@@ -23,7 +23,6 @@ from rdkit.six.moves import cPickle
 from rdkit.six import iteritems
 
 import math
-from collections import defaultdict
 
 import os.path as op
 
@@ -98,17 +97,17 @@ def calculateScore(m):
   # smooth the 10-end
   if sascore > 8.: sascore = 8. + math.log(sascore+1.-9.)
   if sascore > 10.: sascore = 10.0
-  elif sascore < 1.: sascore = 1.0 
+  elif sascore < 1.: sascore = 1.0
 
   return sascore
-    
+
 
 def processMols(mols):
   print('smiles\tName\tsa_score')
   for i,m in enumerate(mols):
     if m is None:
       continue
- 
+
     s = calculateScore(m)
 
     smiles = Chem.MolToSmiles(m)
@@ -129,23 +128,23 @@ if __name__=='__main__':
 
   print('Reading took %.2f seconds. Calculating took %.2f seconds'%((t2-t1),(t4-t3)), file=sys.stderr)
 
-  
+
 #
 #  Copyright (c) 2013, Novartis Institutes for BioMedical Research Inc.
 #  All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
-# met: 
+# met:
 #
-#     * Redistributions of source code must retain the above copyright 
+#     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above
-#       copyright notice, this list of conditions and the following 
-#       disclaimer in the documentation and/or other materials provided 
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
-#     * Neither the name of Novartis Institutes for BioMedical Research Inc. 
-#       nor the names of its contributors may be used to endorse or promote 
+#     * Neither the name of Novartis Institutes for BioMedical Research Inc.
+#       nor the names of its contributors may be used to endorse or promote
 #       products derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS

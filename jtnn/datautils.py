@@ -10,7 +10,7 @@ class MoleculeDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    
+
     def __getitem__(self, idx):
         smiles = self.data[idx]
         mol_tree = MolTree(smiles)
@@ -27,7 +27,7 @@ class PropDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    
+
     def __getitem__(self, idx):
         smiles = self.data[idx]
         mol_tree = MolTree(smiles)
