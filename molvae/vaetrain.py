@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
 
+import os
 import sys
 from optparse import OptionParser
 
@@ -39,8 +40,18 @@ lr = float(opts.lr)
 
 model = JTNNVAE(vocab, hidden_size, latent_size, depth)
 
-if opts.model_path is not None:
+# Load existing model, if there is one
+if os.path.exists(opts.save_path):
+    print('Loading saved model')
+    saves = sorted(os.listdir(opts.save_path))
+    path = os.path.join(opts.save_path, saves[-1])
+    model.load_state_dict(torch.load(path))
+
+# Otherwise, load pre-trained model if specified (from pretrain.py)
+elif opts.model_path is not None:
     model.load_state_dict(torch.load(opts.model_path))
+
+# Else initialize a new model
 else:
     for param in model.parameters():
         if param.dim() == 1:
