@@ -54,6 +54,7 @@ class JTNNEncoder(nn.Module):
 
                 pad_len = MAX_NB - len(h_nei)
                 h_nei.extend([padding] * pad_len)
+                h_nei = h_nei[:MAX_NB]
                 cur_h_nei.extend(h_nei)
 
             cur_x = create_var(torch.LongTensor(cur_x))

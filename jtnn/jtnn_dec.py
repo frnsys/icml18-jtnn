@@ -84,14 +84,16 @@ class JTNNDecoder(nn.Module):
                 #Neighbors for message passing (target not included)
                 cur_nei = [h[(node_y.idx,node_x.idx)] for node_y in node_x.neighbors if node_y.idx != real_y.idx]
                 pad_len = MAX_NB - len(cur_nei)
+                cur_nei.extend([padding] * pad_len)
+                cur_nei = cur_nei[:MAX_NB]
                 cur_h_nei.extend(cur_nei)
-                cur_h_nei.extend([padding] * pad_len)
 
                 #Neighbors for stop prediction (all neighbors)
                 cur_nei = [h[(node_y.idx,node_x.idx)] for node_y in node_x.neighbors]
                 pad_len = MAX_NB - len(cur_nei)
+                cur_nei.extend([padding] * pad_len)
+                cur_nei = cur_nei[:MAX_NB]
                 cur_o_nei.extend(cur_nei)
-                cur_o_nei.extend([padding] * pad_len)
 
                 #Current clique embedding
                 cur_x.append(node_x.wid)
