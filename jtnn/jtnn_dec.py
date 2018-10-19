@@ -181,7 +181,7 @@ class JTNNDecoder(nn.Module):
         stop_acc = torch.eq(stops, stop_targets).float()
         stop_acc = torch.sum(stop_acc) / stop_targets.nelement()
 
-        return pred_loss, stop_loss, pred_acc.data[0], stop_acc.data[0]
+        return pred_loss, stop_loss, pred_acc.item(), stop_acc.item()
 
     def decode(self, mol_vec, prob_decode):
         stack = []
