@@ -29,7 +29,7 @@ class JTNNVAE(nn.Module):
         self.depth = depth
 
         self.embedding = nn.Embedding(vocab.size(), hidden_size)
-        self.jtnn = JTNNEncoder(vocab, hidden_size, self.embedding)
+        self.encoder = JTNNEncoder(vocab, hidden_size, self.embedding)
         self.jtmpn = JTMPN(hidden_size, depth)
         self.mpn = MPN(hidden_size, depth)
         self.decoder = JTNNDecoder(vocab, hidden_size, latent_size // 2, self.embedding)
@@ -45,7 +45,7 @@ class JTNNVAE(nn.Module):
     def encode(self, mol_batch):
         set_batch_nodeID(mol_batch, self.vocab)
         root_batch = [mol_tree.nodes[0] for mol_tree in mol_batch]
-        tree_mess,tree_vec = self.jtnn(root_batch)
+        tree_mess,tree_vec = self.encoder(root_batch)
 
         smiles_batch = [mol_tree.smiles for mol_tree in mol_batch]
         mol_vec = self.mpn(mol2graph(smiles_batch))
@@ -225,7 +225,7 @@ class JTNNVAE(nn.Module):
             if len(node.neighbors) > 1:
                 set_atommap(node.mol, node.nid)
 
-        tree_mess = self.jtnn([pred_root])[0]
+        tree_mess, _ = self.encoder([pred_root])
 
         cur_mol = copy_edit_mol(pred_root.mol)
         global_amap = [{}] + [{} for node in pred_nodes]
