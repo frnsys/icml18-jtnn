@@ -67,6 +67,11 @@ class JTNNVAE(nn.Module):
         if conditional:
             mol_batch, labels = [list(l) for l in zip(*mol_batch)]
 
+            # One-hot encode labels
+            idx = create_var(torch.LongTensor(labels).unsqueeze(1))
+            labels = create_var(torch.FloatTensor(len(labels), max(labels)+1)).zero_()
+            labels = labels.scatter_(1, idx, 1)
+
         tree_mess, tree_vec, mol_vec = self.encode(mol_batch)
 
         tree_mean = self.T_mean(tree_vec)
@@ -82,6 +87,10 @@ class JTNNVAE(nn.Module):
         tree_vec = tree_mean + torch.exp(tree_log_var / 2) * epsilon
         epsilon = create_var(torch.randn(batch_size, self.latent_size // 2), False)
         mol_vec = mol_mean + torch.exp(mol_log_var / 2) * epsilon
+
+        # Add labels/context for CVAE
+        if conditional:
+            tree_vec = torch.cat([tree_vec, labels], dim=1)
 
         word_loss, topo_loss, word_acc, topo_acc = self.decoder(mol_batch, tree_vec)
         assm_loss, assm_acc = self.assm(mol_batch, mol_vec, tree_mess)

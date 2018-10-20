@@ -59,6 +59,9 @@ class JTNNEncoder(nn.Module):
 
             cur_x = create_var(torch.LongTensor(cur_x))
             cur_x = self.embedding(cur_x)
+
+            # TODO: another possible spot for the context vector?
+
             cur_h_nei = torch.cat(cur_h_nei, dim=0).view(-1,MAX_NB,self.hidden_size)
 
             new_h = GRU(cur_x, cur_h_nei, self.W_z, self.W_r, self.U_r, self.W_h)
@@ -94,7 +97,7 @@ def get_prop_order(root):
     order = order2[::-1] + order1
     return order
 
-def node_aggregate(nodes, h, embedding, W):
+def node_aggregate(nodes, h, embedding, W, labels=None):
     x_idx = []
     h_nei = []
     hidden_size = embedding.embedding_dim
@@ -112,5 +115,9 @@ def node_aggregate(nodes, h, embedding, W):
     x_vec = create_var(torch.LongTensor(x_idx))
     x_vec = embedding(x_vec)
     node_vec = torch.cat([x_vec, sum_h_nei], dim=1)
+
+    if labels:
+        node_vec = torch.cat([x_vec, sum_h_nei, labels], dim=1)
+
     return nn.ReLU()(W(node_vec))
 
