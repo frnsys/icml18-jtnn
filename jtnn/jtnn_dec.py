@@ -45,12 +45,12 @@ class JTNNDecoder(nn.Module):
         dfs(trace, node, super_root)
         return [(x.smiles, y.smiles, z) for x,y,z in trace]
 
-    def forward(self, mol_batch, mol_vec):
+    def forward(self, mol_batch, tree_vec):
         super_root = MolTreeNode("")
         super_root.idx = -1
 
         #Initialize
-        pred_hiddens,pred_mol_vecs,pred_targets = [],[],[]
+        pred_hiddens,pred_tree_vecs,pred_targets = [],[],[]
         stop_hiddens,stop_targets = [],[]
         traces = []
         for mol_tree in mol_batch:
@@ -63,7 +63,7 @@ class JTNNDecoder(nn.Module):
         #Predict Root
         pred_hiddens.append(create_var(torch.zeros(len(mol_batch),self.hidden_size)))
         pred_targets.extend([mol_tree.nodes[0].wid for mol_tree in mol_batch])
-        pred_mol_vecs.append(mol_vec)
+        pred_tree_vecs.append(tree_vec)
 
         max_iter = max([len(tr) for tr in traces])
         padding = create_var(torch.zeros(self.hidden_size), False)
@@ -125,8 +125,8 @@ class JTNNDecoder(nn.Module):
 
             #Hidden states for stop prediction
             cur_batch = create_var(torch.LongTensor(batch_list))
-            cur_mol_vec = mol_vec.index_select(0, cur_batch)
-            stop_hidden = torch.cat([cur_x,cur_o,cur_mol_vec], dim=1)
+            cur_tree_vec = tree_vec.index_select(0, cur_batch)
+            stop_hidden = torch.cat([cur_x,cur_o,cur_tree_vec], dim=1)
             stop_hiddens.append( stop_hidden )
             stop_targets.extend( stop_target )
 
@@ -134,7 +134,7 @@ class JTNNDecoder(nn.Module):
             if len(pred_list) > 0:
                 batch_list = [batch_list[i] for i in pred_list]
                 cur_batch = create_var(torch.LongTensor(batch_list))
-                pred_mol_vecs.append( mol_vec.index_select(0, cur_batch) )
+                pred_tree_vecs.append( tree_vec.index_select(0, cur_batch) )
 
                 cur_pred = create_var(torch.LongTensor(pred_list))
                 pred_hiddens.append( new_h.index_select(0, cur_pred) )
@@ -155,14 +155,14 @@ class JTNNDecoder(nn.Module):
         cur_o_nei = torch.stack(cur_o_nei, dim=0).view(-1,MAX_NB,self.hidden_size)
         cur_o = cur_o_nei.sum(dim=1)
 
-        stop_hidden = torch.cat([cur_x,cur_o,mol_vec], dim=1)
+        stop_hidden = torch.cat([cur_x,cur_o,tree_vec], dim=1)
         stop_hiddens.append( stop_hidden )
         stop_targets.extend( [0] * len(mol_batch) )
 
         #Predict next clique
         pred_hiddens = torch.cat(pred_hiddens, dim=0)
-        pred_mol_vecs = torch.cat(pred_mol_vecs, dim=0)
-        pred_vecs = torch.cat([pred_hiddens, pred_mol_vecs], dim=1)
+        pred_tree_vecs = torch.cat(pred_tree_vecs, dim=0)
+        pred_vecs = torch.cat([pred_hiddens, pred_tree_vecs], dim=1)
         pred_vecs = nn.ReLU()(self.W(pred_vecs))
         pred_scores = self.W_o(pred_vecs)
         pred_targets = create_var(torch.LongTensor(pred_targets))
@@ -185,13 +185,13 @@ class JTNNDecoder(nn.Module):
 
         return pred_loss, stop_loss, pred_acc.item(), stop_acc.item()
 
-    def decode(self, mol_vec, prob_decode):
+    def decode(self, tree_vec, prob_decode):
         stack = []
         init_hidden = create_var(torch.zeros(1,self.hidden_size))
         zero_pad = create_var(torch.zeros(1,1,self.hidden_size))
 
         #Root Prediction
-        root_hidden = torch.cat([init_hidden, mol_vec], dim=1)
+        root_hidden = torch.cat([init_hidden, tree_vec], dim=1)
         root_hidden = nn.ReLU()(self.W(root_hidden))
         root_score = self.W_o(root_hidden)
         _,root_wid = torch.max(root_score, dim=1)
@@ -217,7 +217,7 @@ class JTNNDecoder(nn.Module):
 
             #Predict stop
             cur_h = cur_h_nei.sum(dim=1)
-            stop_hidden = torch.cat([cur_x,cur_h,mol_vec], dim=1)
+            stop_hidden = torch.cat([cur_x,cur_h,tree_vec], dim=1)
             stop_hidden = nn.ReLU()(self.U(stop_hidden))
             stop_score = nn.Sigmoid()(self.U_s(stop_hidden) * 20).squeeze()
 
@@ -228,7 +228,7 @@ class JTNNDecoder(nn.Module):
 
             if not backtrack: #Forward: Predict next clique
                 new_h = GRU(cur_x, cur_h_nei, self.W_z, self.W_r, self.U_r, self.W_h)
-                pred_hidden = torch.cat([new_h,mol_vec], dim=1)
+                pred_hidden = torch.cat([new_h,tree_vec], dim=1)
                 pred_hidden = nn.ReLU()(self.W(pred_hidden))
                 pred_score = nn.Softmax()(self.W_o(pred_hidden) * 20)
                 if prob_decode:
