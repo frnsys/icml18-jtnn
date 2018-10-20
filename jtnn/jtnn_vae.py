@@ -61,8 +61,11 @@ class JTNNVAE(nn.Module):
         mol_mean = self.G_mean(mol_vec)
         return torch.cat([tree_mean,mol_mean], dim=1)
 
-    def forward(self, mol_batch, beta=0):
+    def forward(self, mol_batch, beta=0, conditional=False):
         batch_size = len(mol_batch)
+
+        if conditional:
+            mol_batch, labels = [list(l) for l in zip(*mol_batch)]
 
         tree_mess, tree_vec, mol_vec = self.encode(mol_batch)
 
