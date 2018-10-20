@@ -13,7 +13,7 @@ class MoleculeDataset(Dataset):
                 smiles = line[0]
                 if labeled:
                     smiles, label = line[0], line[1]
-                    self.data.append((smiles, label))
+                    self.data.append((smiles, int(label)))
                 else:
                     smiles = line[0]
                     self.data.append(smiles)
@@ -31,7 +31,7 @@ class MoleculeDataset(Dataset):
         mol_tree.recover()
         mol_tree.assemble()
         if self.labeled:
-            return mol_tree, sample
+            return mol_tree, label
         else:
             return mol_tree
 
