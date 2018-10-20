@@ -25,6 +25,7 @@ parser.add_option("-l", "--latent", dest="latent_size", default=56)
 parser.add_option("-d", "--depth", dest="depth", default=3)
 parser.add_option("-z", "--beta", dest="beta", default=1.0)
 parser.add_option("-q", "--lr", dest="lr", default=1e-3)
+parser.add_option("-c", "--classes", dest="n_classes", default=0)
 parser.add_option("--conditional", action="store_true", dest="conditional")
 opts,args = parser.parse_args()
 
@@ -37,9 +38,13 @@ latent_size = int(opts.latent_size)
 depth = int(opts.depth)
 beta = float(opts.beta)
 lr = float(opts.lr)
-# anneal = float(opts.anneal)
+n_classes = int(opts.n_classes)
 
-model = JTNNVAE(vocab, hidden_size, latent_size, depth)
+if opts.conditional and n_classes <= 0:
+    print('If the --conditional flag is set, --classes must be > 0. Exiting.')
+    sys.exit(1)
+
+model = JTNNVAE(vocab, hidden_size, latent_size, depth, n_classes)
 
 # Load existing model, if there is one
 if os.path.exists(opts.save_path):

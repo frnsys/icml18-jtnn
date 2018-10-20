@@ -7,7 +7,7 @@ MAX_NB = 8
 
 class JTNNEncoder(nn.Module):
 
-    def __init__(self, vocab, hidden_size, embedding=None):
+    def __init__(self, vocab, hidden_size, embedding=None, n_classes=0):
         super(JTNNEncoder, self).__init__()
         self.hidden_size = hidden_size
         self.vocab_size = vocab.size()
@@ -22,9 +22,9 @@ class JTNNEncoder(nn.Module):
         self.W_r = nn.Linear(hidden_size, hidden_size, bias=False)
         self.U_r = nn.Linear(hidden_size, hidden_size)
         self.W_h = nn.Linear(2 * hidden_size, hidden_size)
-        self.W = nn.Linear(2 * hidden_size, hidden_size)
+        self.W = nn.Linear((2 * hidden_size) + n_classes, hidden_size)
 
-    def forward(self, root_batch):
+    def forward(self, root_batch, labels=None):
         orders = []
         for root in root_batch:
             order = get_prop_order(root)
@@ -60,8 +60,6 @@ class JTNNEncoder(nn.Module):
             cur_x = create_var(torch.LongTensor(cur_x))
             cur_x = self.embedding(cur_x)
 
-            # TODO: another possible spot for the context vector?
-
             cur_h_nei = torch.cat(cur_h_nei, dim=0).view(-1,MAX_NB,self.hidden_size)
 
             new_h = GRU(cur_x, cur_h_nei, self.W_z, self.W_r, self.U_r, self.W_h)
@@ -69,7 +67,7 @@ class JTNNEncoder(nn.Module):
                 x,y = m[0].idx,m[1].idx
                 h[(x,y)] = new_h[i]
 
-        root_vecs = node_aggregate(root_batch, h, self.embedding, self.W)
+        root_vecs = node_aggregate(root_batch, h, self.embedding, self.W, labels)
 
         return h, root_vecs
 
@@ -116,7 +114,7 @@ def node_aggregate(nodes, h, embedding, W, labels=None):
     x_vec = embedding(x_vec)
     node_vec = torch.cat([x_vec, sum_h_nei], dim=1)
 
-    if labels:
+    if labels is not None:
         node_vec = torch.cat([x_vec, sum_h_nei, labels], dim=1)
 
     return nn.ReLU()(W(node_vec))

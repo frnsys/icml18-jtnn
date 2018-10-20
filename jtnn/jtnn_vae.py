@@ -21,18 +21,19 @@ def set_batch_nodeID(mol_batch, vocab):
 
 class JTNNVAE(nn.Module):
 
-    def __init__(self, vocab, hidden_size, latent_size, depth):
+    def __init__(self, vocab, hidden_size, latent_size, depth, n_classes=0):
         super(JTNNVAE, self).__init__()
         self.vocab = vocab
         self.hidden_size = hidden_size
         self.latent_size = latent_size
         self.depth = depth
+        self.n_classes = n_classes
 
         self.embedding = nn.Embedding(vocab.size(), hidden_size)
-        self.encoder = JTNNEncoder(vocab, hidden_size, self.embedding)
+        self.encoder = JTNNEncoder(vocab, hidden_size, self.embedding, self.n_classes)
         self.jtmpn = JTMPN(hidden_size, depth)
         self.mpn = MPN(hidden_size, depth)
-        self.decoder = JTNNDecoder(vocab, hidden_size, latent_size // 2, self.embedding)
+        self.decoder = JTNNDecoder(vocab, hidden_size, latent_size // 2, self.embedding, self.n_classes)
 
         self.T_mean = nn.Linear(hidden_size, latent_size // 2)
         self.T_var = nn.Linear(hidden_size, latent_size // 2)
@@ -42,10 +43,10 @@ class JTNNVAE(nn.Module):
         self.assm_loss = nn.CrossEntropyLoss(size_average=False)
         self.stereo_loss = nn.CrossEntropyLoss(size_average=False)
 
-    def encode(self, mol_batch):
+    def encode(self, mol_batch, labels=None):
         set_batch_nodeID(mol_batch, self.vocab)
         root_batch = [mol_tree.nodes[0] for mol_tree in mol_batch]
-        tree_mess,tree_vec = self.encoder(root_batch)
+        tree_mess,tree_vec = self.encoder(root_batch, labels)
 
         smiles_batch = [mol_tree.smiles for mol_tree in mol_batch]
         mol_vec = self.mpn(mol2graph(smiles_batch))
@@ -69,10 +70,12 @@ class JTNNVAE(nn.Module):
 
             # One-hot encode labels
             idx = create_var(torch.LongTensor(labels).unsqueeze(1))
-            labels = create_var(torch.FloatTensor(len(labels), max(labels)+1)).zero_()
+            labels = create_var(torch.FloatTensor(len(labels), self.n_classes)).zero_()
             labels = labels.scatter_(1, idx, 1)
+        else:
+            labels = None
 
-        tree_mess, tree_vec, mol_vec = self.encode(mol_batch)
+        tree_mess, tree_vec, mol_vec = self.encode(mol_batch, labels=labels)
 
         tree_mean = self.T_mean(tree_vec)
         tree_log_var = -torch.abs(self.T_var(tree_vec)) #Following Mueller et al.
