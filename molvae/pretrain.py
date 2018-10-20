@@ -21,6 +21,7 @@ parser.add_option("-b", "--batch", dest="batch_size", default=40)
 parser.add_option("-w", "--hidden", dest="hidden_size", default=200)
 parser.add_option("-l", "--latent", dest="latent_size", default=56)
 parser.add_option("-d", "--depth", dest="depth", default=3)
+parser.add_option("--conditional", action="store_true", dest="conditional")
 opts,args = parser.parse_args()
 
 vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)]
@@ -46,7 +47,7 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 scheduler = lr_scheduler.ExponentialLR(optimizer, 0.9)
 scheduler.step()
 
-dataset = MoleculeDataset(opts.train_path)
+dataset = MoleculeDataset(opts.train_path, labeled=opts.conditional)
 
 MAX_EPOCH = 3
 PRINT_ITER = 20
@@ -58,13 +59,15 @@ for epoch in range(MAX_EPOCH):
 
     for it, batch in enumerate(dataloader):
         for mol_tree in batch:
+            if opts.conditional:
+                mol_tree, label = mol_tree
             for node in mol_tree.nodes:
                 if node.label not in node.cands:
                     node.cands.append(node.label)
                     node.cand_mols.append(node.label_mol)
 
         model.zero_grad()
-        loss, kl_div, wacc, tacc, sacc, dacc = model(batch, beta=0)
+        loss, kl_div, wacc, tacc, sacc, dacc = model(batch, beta=0, conditional=opts.conditional)
         loss.backward()
         optimizer.step()
 
