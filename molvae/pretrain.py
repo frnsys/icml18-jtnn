@@ -5,7 +5,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
 
 import sys
-from tqdm import trange
+from tqdm import tqdm
 from optparse import OptionParser
 
 from jtnn import Vocab, JTNNVAE, MoleculeDataset
@@ -62,7 +62,7 @@ PRINT_ITER = 20
 for epoch in range(MAX_EPOCH):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=lambda x:x, drop_last=True)
 
-    iter = trange(enumerate(dataloader))
+    iter = tqdm(enumerate(dataloader))
     for it, batch in iter:
         for mol_tree in batch:
             if opts.conditional:
