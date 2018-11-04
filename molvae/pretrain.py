@@ -71,7 +71,6 @@ for epoch in range(MAX_EPOCH):
         'dacc': []
     }
     for it, batch in iter:
-        sizes = []
         for mol_tree in batch:
             if opts.conditional:
                 mol_tree, label = mol_tree
@@ -79,9 +78,6 @@ for epoch in range(MAX_EPOCH):
                 if node.label not in node.cands:
                     node.cands.append(node.label)
                     node.cand_mols.append(node.label_mol)
-                sizes.append(len(node.cands))
-
-        print('max size:', max(sizes))
 
         model.zero_grad()
         loss, kl_div, wacc, tacc, sacc, dacc = model(batch, beta=0, conditional=opts.conditional)
