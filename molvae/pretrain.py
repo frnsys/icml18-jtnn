@@ -1,3 +1,4 @@
+import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -63,7 +64,14 @@ for epoch in range(MAX_EPOCH):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=lambda x:x, drop_last=True)
 
     iter = tqdm(enumerate(dataloader))
+    stats = {
+        'wacc': [],
+        'tacc': [],
+        'sacc': [],
+        'dacc': []
+    }
     for it, batch in iter:
+        sizes = []
         for mol_tree in batch:
             if opts.conditional:
                 mol_tree, label = mol_tree
@@ -71,6 +79,9 @@ for epoch in range(MAX_EPOCH):
                 if node.label not in node.cands:
                     node.cands.append(node.label)
                     node.cand_mols.append(node.label_mol)
+                sizes.append(len(node.cands))
+
+        print('max size:', max(sizes))
 
         model.zero_grad()
         loss, kl_div, wacc, tacc, sacc, dacc = model(batch, beta=0, conditional=opts.conditional)
@@ -85,8 +96,15 @@ for epoch in range(MAX_EPOCH):
             assm=sacc, # assm accuracy
             steo=dacc  # steo accuracy
         )
+        stats['wacc'].append(wacc)
+        stats['tacc'].append(tacc)
+        stats['sacc'].append(sacc)
+        stats['dacc'].append(dacc)
+        torch.cuda.empty_cache()
 
     scheduler.step()
     print("learning rate: %.6f" % scheduler.get_lr()[0])
     torch.save(model.state_dict(), opts.save_path + "/model.iter-" + str(epoch))
 
+with open('stats.json', 'w') as f:
+    json.dump(stats, f)
