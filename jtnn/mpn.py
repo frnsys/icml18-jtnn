@@ -83,7 +83,13 @@ def mol2graph(mol_batch):
         x,y = all_bonds[b1]
         for i,b2 in enumerate(in_bonds[x]):
             if all_bonds[b2][0] != y:
-                bgraph[b1,i] = b2
+                # TODO Occasionally i gets too large here
+                # and throws an IndexError
+                try:
+                    bgraph[b1,i] = b2
+                except IndexError:
+                    print('WARNING: IndexError with `bgraph`')
+                    continue
 
     return fatoms, fbonds, agraph, bgraph, scope
 
