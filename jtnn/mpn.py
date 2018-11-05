@@ -71,25 +71,15 @@ def mol2graph(mol_batch):
 
     for a in range(total_atoms):
         for i, b in enumerate(in_bonds[a]):
-            # TODO Occasionally i gets too large here
-            # and throws an IndexError
-            try:
-                agraph[a,i] = b
-            except IndexError:
-                print('WARNING: IndexError with `agraph`')
-                continue
+            if i >= MAX_NB: break
+            agraph[a,i] = b
 
     for b1 in range(1, total_bonds):
         x,y = all_bonds[b1]
         for i,b2 in enumerate(in_bonds[x]):
             if all_bonds[b2][0] != y:
-                # TODO Occasionally i gets too large here
-                # and throws an IndexError
-                try:
-                    bgraph[b1,i] = b2
-                except IndexError:
-                    print('WARNING: IndexError with `bgraph`')
-                    continue
+                if i >= MAX_NB: break
+                bgraph[b1,i] = b2
 
     return fatoms, fbonds, agraph, bgraph, scope
 
