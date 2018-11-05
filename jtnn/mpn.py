@@ -70,8 +70,14 @@ def mol2graph(mol_batch):
     bgraph = torch.zeros(total_bonds,MAX_NB).long()
 
     for a in range(total_atoms):
-        for i,b in enumerate(in_bonds[a]):
-            agraph[a,i] = b
+        for i, b in enumerate(in_bonds[a]):
+            # TODO Occasionally i gets too large here
+            # and throws an IndexError
+            try:
+                agraph[a,i] = b
+            except IndexError:
+                print('WARNING: IndexError with `agraph`')
+                continue
 
     for b1 in range(1, total_bonds):
         x,y = all_bonds[b1]
