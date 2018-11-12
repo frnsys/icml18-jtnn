@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
 
+import os
 import sys
 from tqdm import tqdm
 from optparse import OptionParser
@@ -41,6 +42,17 @@ if opts.conditional and n_classes <= 0:
     sys.exit(1)
 
 model = JTNNVAE(vocab, hidden_size, latent_size, depth, n_classes)
+
+# Load existing model, if there is one
+if os.path.exists(opts.save_path):
+    print('Loading saved model')
+    saves = sorted(os.listdir(opts.save_path))
+    path = os.path.join(opts.save_path, saves[-1])
+    model.load_state_dict(torch.load(path))
+
+# Otherwise, load pre-trained model if specified (from pretrain.py)
+elif opts.model_path is not None:
+    model.load_state_dict(torch.load(opts.model_path))
 
 for param in model.parameters():
     if param.dim() == 1:
@@ -102,5 +114,5 @@ for epoch in range(MAX_EPOCH):
     print("learning rate: %.6f" % scheduler.get_lr()[0])
     torch.save(model.state_dict(), opts.save_path + "/model.iter-" + str(epoch))
 
-with open('stats.json', 'w') as f:
+with open('stats_pretrain.json', 'w') as f:
     json.dump(stats, f)
