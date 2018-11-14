@@ -38,8 +38,8 @@ if opts.conditional and n_classes <= 0:
 model = JTNNVAE(vocab, hidden_size, latent_size, depth, n_classes)
 
 print('Loading saved model')
-saves = sorted(os.listdir(opts.save_path))
-path = os.path.join(opts.save_path, saves[-1])
+saves = sorted(os.listdir(opts.model_path))
+path = os.path.join(opts.model_path, saves[-1])
 model.load_state_dict(torch.load(path))
 model = model.cuda()
 
