@@ -232,7 +232,9 @@ class JTNNDecoder(nn.Module):
                 pred_hidden = nn.ReLU()(self.W(pred_hidden))
                 pred_score = nn.Softmax()(self.W_o(pred_hidden) * 20)
                 if prob_decode:
-                    sort_wid = torch.multinomial(pred_score.data.squeeze(), 5)
+                    # prevent prob = 0
+                    eps = 1e-5
+                    sort_wid = torch.multinomial(pred_score.data.squeeze() + eps, 5)
                 else:
                     _,sort_wid = torch.sort(pred_score, dim=1, descending=True)
                     sort_wid = sort_wid.data.squeeze()

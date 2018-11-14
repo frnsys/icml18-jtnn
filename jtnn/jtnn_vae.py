@@ -226,6 +226,7 @@ class JTNNVAE(nn.Module):
             labels = create_var(torch.FloatTensor(len(labels), self.n_classes)).zero_()
             labels = labels.scatter_(1, idx, 1)
             tree_vec = torch.cat([tree_vec, labels], dim=1)
+            return self.decode(tree_vec, mol_vec, prob_decode, labels=labels)
         return self.decode(tree_vec, mol_vec, prob_decode)
 
     def sample_eval(self):
@@ -237,7 +238,7 @@ class JTNNVAE(nn.Module):
             all_smiles.append(s)
         return all_smiles
 
-    def decode(self, tree_vec, mol_vec, prob_decode):
+    def decode(self, tree_vec, mol_vec, prob_decode, labels=None):
         pred_root,pred_nodes = self.decoder.decode(tree_vec, prob_decode)
 
         #Mark nid & is_leaf & atommap
@@ -247,7 +248,7 @@ class JTNNVAE(nn.Module):
             if len(node.neighbors) > 1:
                 set_atommap(node.mol, node.nid)
 
-        tree_mess, _ = self.encoder([pred_root])
+        tree_mess, _ = self.encoder([pred_root], labels)
 
         cur_mol = copy_edit_mol(pred_root.mol)
         global_amap = [{}] + [{} for node in pred_nodes]
