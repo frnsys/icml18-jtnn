@@ -30,6 +30,7 @@ latent_size = int(opts.latent_size)
 depth = int(opts.depth)
 nsample = int(opts.nsample)
 n_classes = int(opts.n_classes)
+class_ = int(opts.class_)
 
 if opts.conditional and n_classes <= 0:
     print('If the --conditional flag is set, --classes must be > 0. Exiting.')
@@ -45,4 +46,4 @@ model = model.cuda()
 
 torch.manual_seed(0)
 for i in range(nsample):
-    print(model.sample_prior(prob_decode=True, class_=opts.class_))
+    print(model.sample_prior(prob_decode=True, class_=class_))
