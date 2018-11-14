@@ -216,9 +216,16 @@ class JTNNVAE(nn.Module):
                 all_smiles.append(new_smiles)
         return all_smiles
 
-    def sample_prior(self, prob_decode=False):
+    def sample_prior(self, prob_decode=False, class_=None):
         tree_vec = create_var(torch.randn(1, self.latent_size // 2), False)
         mol_vec = create_var(torch.randn(1, self.latent_size // 2), False)
+
+        if class_ is not None: # conditional
+            labels = [class_]
+            idx = create_var(torch.LongTensor(labels).unsqueeze(1))
+            labels = create_var(torch.FloatTensor(len(labels), self.n_classes)).zero_()
+            labels = labels.scatter_(1, idx, 1)
+            tree_vec = torch.cat([tree_vec, labels], dim=1)
         return self.decode(tree_vec, mol_vec, prob_decode)
 
     def sample_eval(self):
